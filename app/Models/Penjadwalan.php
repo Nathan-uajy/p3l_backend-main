@@ -26,4 +26,6 @@ class Penjadwalan extends Model
     {
         return $this->belongsTo(Pegawai::class, 'pegawaiID');
     }
+
+    
 }

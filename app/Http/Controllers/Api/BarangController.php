@@ -7,111 +7,131 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Barang;
-use App\Models\Penitip; // Pastikan ini ada
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use App\Models\Transaksi;
+use App\Models\Pembeli;
 
 class BarangController extends Controller
 {
+    // Fitur 52 - Ambil semua barang milik penitip tertentu
     public function getByPenitip($penitipID)
     {
-        $barangs = Barang::where('penitipID', $penitipID)
-            ->with(['penitip', 'kategori'])
-            ->get()
-            ->map(function ($b) {
-                return [
-                    'idProduk'     => $b->idProduk,
-                    'donasiID'     => $b->donasiID,
-                    'penitipID'    => $b->penitipID,
-                    'namaProduk'   => $b->namaProduk,
-                    'deskripsi'    => $b->deskripsi,
-                    'harga'        => $b->harga,
-                    'kategoriID'   => $b->kategoriID,
-                    'namaKategori' => $b->kategori ? $b->kategori->namaKategori : null,
-                    'status'       => $b->status,
-                    'garansi'      => $b->garansi,
-                    'tglMulai'     => $b->tglMulai,
-                    'tglSelesai'   => $b->tglSelesai,
-                    'gambar_url'   => $b->gambar ? url('storage/' . $b->gambar) : null,
-                    'gambar2_url'  => $b->gambar2 ? url('storage/' . $b->gambar2) : null,
-                    'created_at'   => $b->created_at,
-                    'updated_at'   => $b->updated_at,
-                ];
-            });
-
-        return response()->json($barangs);
-    }
-
-    public function show($id)
-    {
-        $barang = Barang::with(['penitip', 'kategori'])->find($id);
-        if (!$barang) {
-            return response()->json(['message' => 'Barang tidak ditemukan'], 404);
-        }
-
-        return response()->json([
-            'idProduk'     => $barang->idProduk,
-            'donasiID'     => $barang->donasiID,
-            'penitipID'    => $barang->penitipID,
-            'namaProduk'   => $barang->namaProduk,
-            'deskripsi'    => $barang->deskripsi,
-            'harga'        => $b->harga,
-            'kategoriID'   => $b->kategoriID,
-            'namaKategori' => $b->kategori ? $b->kategori->namaKategori : null,
-            'status'       => $b->status,
-            'garansi'      => $b->garansi,
-            'tglMulai'     => $b->tglMulai,
-            'tglSelesai'   => $b->tglSelesai,
-            'gambar_url'   => $b->gambar ? url('storage/' . $b->gambar) : null,
-            'gambar2_url'  => $b->gambar2 ? url('storage/' . $b->gambar2) : null,
-            'created_at'   => $b->created_at,
-            'updated_at'   => $b->updated_at,
-        ]);
-    }
-
-    public function search(Request $request)
-    {
-        $q = $request->query('q');
-        $penitipID = $request->query('penitipID');
-
-        if (empty($q) || empty($penitipID)) {
-            return response()->json(['message' => 'Parameter q dan penitipID diperlukan'], 400);
-        }
-
-        $query = Barang::where('penitipID', $penitipID)
-            ->with(['kategori'])
-            ->where(function ($query) use ($q) {
-                $query->where('namaProduk', 'like', "%$q%")
-                    ->orWhere('status', 'like', "%$q%")
-                    ->orWhere('garansi', 'like', "%$q%")
-                    ->orWhereHas('kategori', function ($kategoriQuery) use ($q) {
-                        $kategoriQuery->where('namaKategori', 'like', "%$q%");
-                    });
-            });
-
-        $barangs = $query->get()->map(function ($b) {
+        $barangs = Barang::where('penitipID', $penitipID)->get()->map(function ($b) {
             return [
                 'idProduk'     => $b->idProduk,
-                'donasiID'     => $b->donasiID,
-                'penitipID'    => $b->penitipID,
                 'namaProduk'   => $b->namaProduk,
                 'deskripsi'    => $b->deskripsi,
                 'harga'        => $b->harga,
-                'kategoriID'   => $b->kategoriID,
-                'namaKategori' => $b->kategori ? $b->kategori->namaKategori : null,
+                'kategori'     => $b->kategori,
                 'status'       => $b->status,
                 'garansi'      => $b->garansi,
                 'tglMulai'     => $b->tglMulai,
                 'tglSelesai'   => $b->tglSelesai,
                 'gambar_url'   => $b->gambar ? url('storage/' . $b->gambar) : null,
                 'gambar2_url'  => $b->gambar2 ? url('storage/' . $b->gambar2) : null,
-                'created_at'   => $b->created_at,
-                'updated_at'   => $b->updated_at,
             ];
-        });
-
+        }
+        );
+    
         return response()->json($barangs);
     }
 
+    // Menampilkan detail barang barang-transaksi
+    public function show($id)
+    {
+        // Cari detail transaksi berdasarkan transaksiID
+        $detail = DB::table('detail_transaksis')->where('transaksiID', $id)->first();
+
+        if (!$detail) {
+            return response()->json(['message' => 'Detail transaksi tidak ditemukan'], 404);
+        }
+
+        $data = DB::table('detail_transaksis')
+            ->join('transaksis', 'transaksis.transaksiID', '=', 'detail_transaksis.transaksiID')
+            ->join('pembelis', 'pembelis.pembeliID', '=', 'transaksis.pembeliID')
+            ->join('barangs', 'barangs.idProduk', '=', 'detail_transaksis.produkID')
+            ->join('penitips', 'penitips.penitipID', '=', 'barangs.penitipID')
+            ->where('detail_transaksis.transaksiID', $id)
+            ->select(
+                'barangs.idProduk as idProduk',
+                'barangs.namaProduk',
+                'barangs.harga',
+                'barangs.gambar as gambar1',
+                'barangs.gambar2',
+                'penitips.nama as namaPenitip',
+                'pembelis.nama as namaPembeli',
+                'pembelis.alamat as alamatPengiriman',
+                'transaksis.waktu_transaksi as tglTransaksi',
+                'transaksis.status as statusTransaksi',
+                'transaksis.tipe_transaksi as tipe_transaksi'
+            )
+            ->first();
+
+        if (!$data) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        return response()->json($data);
+    }
+    public function showDetail($id)
+    {
+        $barang = Barang::find($id);
+        if (!$barang) {
+            return response()->json(['message' => 'Barang tidak ditemukan'], 404);
+        }
+        
+        return response()->json([
+            'idProduk'     => $barang->idProduk,
+            'namaProduk'   => $barang->namaProduk,
+            'deskripsi'    => $barang->deskripsi,
+            'harga'        => $barang->harga,
+            'kategori'     => $barang->kategori,
+            'status'       => $barang->status,
+            'garansi'      => $barang->garansi,
+            'tglMulai'     => $barang->tglMulai,
+            'tglSelesai'   => $barang->tglSelesai,
+            'gambar_url'   => $barang->gambar ? url('storage/' . $barang->gambar) : null,
+            'gambar2_url'  => $barang->gambar2 ? url('storage/' . $barang->gambar2) : null,
+        ]);
+    }
+    
+    // Fitur 53 - Pencarian barang
+    public function search(Request $request)
+    {
+        $q = $request->query('q');
+        $penitipID = $request->query('penitipID'); // Ambil ID penitip dari frontend
+
+        $barang = Barang::where('penitipID', $penitipID)
+            ->where(function ($query) use ($q) {
+                $query->where('namaProduk', 'like', "%$q%")
+                    ->orWhere('kategori', 'like', "%$q%")
+                    ->orWhere('status', 'like', "%$q%")
+                    ->orWhere('garansi', 'like', "%$q%");
+            })
+            ->get();
+
+        // Tambahkan URL gambar agar bisa ditampilkan di frontend
+        $data = $barang->map(function ($item) {
+            return [
+                'idProduk' => $item->idProduk,
+                'namaProduk' => $item->namaProduk,
+                'deskripsi' => $item->deskripsi,
+                'harga' => $item->harga,
+                'kategori' => $item->kategori,
+                'status' => $item->status,
+                'garansi' => $item->garansi,
+                'tglMulai' => $item->tglMulai,
+                'tglSelesai' => $item->tglSelesai,
+                'gambar_url' => $item->gambar ? url('storage/' . $item->gambar) : null,
+                'gambar2_url' => $item->gambar2 ? url('storage/' . $item->gambar2) : null,
+            ];
+        });
+
+        return response()->json($data);
+    }
+
+    // Perpanjang masa penitipan 30 hari
     public function perpanjang($id)
     {
         $barang = Barang::find($id);
@@ -132,9 +152,10 @@ class BarangController extends Controller
         $barang->status = 'diperpanjang';
         $barang->save();
 
-        return response()->json(['message' => 'Barang berhasil diperpanjang.', 'data' => $barang]);
+        return response()->json(['message' => 'Barang berhasil diperpanjang.']);
     }
 
+    // Menambahkan barang baru dengan 2 gambar
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -142,8 +163,8 @@ class BarangController extends Controller
             'namaProduk'   => 'required|string|max:255',
             'deskripsi'    => 'nullable|string',
             'harga'        => 'required|numeric',
-            'kategoriID'   => 'nullable|exists:kategori,idKategori',
-            'status'       => 'required|in:aktif,menunggu diambil,diambil,didonasikan,diperpanjang',
+            'kategori'     => 'nullable|string|max:255',
+            'status'       => 'required|string|max:255',
             'tglMulai'     => 'required|date',
             'tglSelesai'   => 'required|date|after_or_equal:tglMulai',
             'garansi'      => 'nullable|date',
@@ -159,21 +180,20 @@ class BarangController extends Controller
         $gambar2Path = $request->file('gambar2')->store('barang_foto', 'public');
 
         $barang = Barang::create([
-            'donasiID'     => $request->donasiID ?? null,
-            'penitipID'    => $request->penitipID,
-            'namaProduk'   => $request->namaProduk,
-            'deskripsi'    => $request->deskripsi,
-            'harga'        => $request->harga,
-            'kategoriID'   => $request->kategoriID,
-            'status'       => $request->status,
-            'tglMulai'     => $request->tglMulai,
-            'tglSelesai'   => $request->tglSelesai,
-            'garansi'      => $request->garansi,
-            'gambar'       => $gambar1Path,
-            'gambar2'      => $gambar2Path,
+            'penitipID'   => $request->penitipID,
+            'namaProduk'  => $request->namaProduk,
+            'deskripsi'   => $request->deskripsi,
+            'harga'       => $request->harga,
+            'kategori'    => $request->kategori,
+            'status'      => $request->status,
+            'tglMulai'    => $request->tglMulai,
+            'tglSelesai'  => $request->tglSelesai,
+            'garansi'     => $request->garansi,
+            'gambar'      => $gambar1Path,
+            'gambar2'     => $gambar2Path,
         ]);
 
-        return response()->json(['message' => 'Barang berhasil ditambahkan', 'barang' => $barang], 201);
+        return response()->json(['message' => 'Barang berhasil ditambahkan', 'barang' => $barang]);
     }
 
     public function konfirmasiAmbil($id)
@@ -183,6 +203,7 @@ class BarangController extends Controller
             return response()->json(['message' => 'Barang tidak ditemukan'], 404);
         }
 
+        // Validasi jika sudah diambil, didonasikan, atau belum masa habis
         if ($barang->status === 'diambil' || $barang->status === 'didonasikan') {
             return response()->json(['message' => 'Barang sudah tidak dapat dikonfirmasi'], 403);
         }
@@ -194,7 +215,7 @@ class BarangController extends Controller
         $barang->status = 'menunggu diambil';
         $barang->save();
 
-        return response()->json(['message' => 'Konfirmasi berhasil, status menjadi menunggu diambil', 'data' => $barang]);
+        return response()->json(['message' => 'Konfirmasi berhasil, status menjadi menunggu diambil']);
     }
 
     public function donasikan($id)
@@ -211,7 +232,7 @@ class BarangController extends Controller
         $barang->status = 'didonasikan';
         $barang->save();
 
-        return response()->json(['message' => 'Barang telah didonasikan.', 'data' => $barang]);
+        return response()->json(['message' => 'Barang telah didonasikan.']);
     }
 
     public function markAsTaken($id)
@@ -227,7 +248,7 @@ class BarangController extends Controller
         }
 
         $barang->status = 'diambil';
-        $barang->tglSelesai = now();
+        $barang->tglSelesai = now(); // Ini adalah tanggal selesai penitipan
         $barang->updated_at = now();
         $barang->save();
 
@@ -237,31 +258,27 @@ class BarangController extends Controller
         ]);
     }
 
+    // Menampilkan semua barang dengan status 'menunggu diambil' (untuk Pegawai Gudang)
     public function semuaMenungguDiambil()
     {
-        $barangs = Barang::with(['penitip', 'kategori'])
+        $barang = \App\Models\Barang::with('penitip')
             ->where('status', 'menunggu diambil')
             ->get()
             ->map(function ($b) {
                 return [
                     'idProduk'     => $b->idProduk,
-                    'donasiID'     => $b->donasiID,
-                    'penitipID'    => $b->penitipID,
                     'namaProduk'   => $b->namaProduk,
                     'namaPenitip'  => $b->penitip->nama ?? 'Tidak ditemukan',
-                    'kategoriID'   => $b->kategoriID,
-                    'namaKategori' => $b->kategori ? $b->kategori->namaKategori : null,
                     'status'       => $b->status,
                     'tglSelesai'   => $b->tglSelesai,
                     'gambar_url'   => $b->gambar ? url('storage/' . $b->gambar) : null,
                     'gambar2_url'  => $b->gambar2 ? url('storage/' . $b->gambar2) : null,
-                    'created_at'   => $b->created_at,
-                    'updated_at'   => $b->updated_at,
                 ];
             });
 
-        return response()->json($barangs);
+        return response()->json($barang);
     }
+
 
     public function tandaiDiambil($id)
     {
@@ -280,257 +297,89 @@ class BarangController extends Controller
         $barang->updated_at = now();
         $barang->save();
 
-        return response()->json(['message' => 'Barang berhasil ditandai sebagai diambil.', 'data' => $barang]);
+        return response()->json(['message' => 'Barang berhasil ditandai sebagai diambil.']);
     }
 
+    // Menampilkan barang dengan status 'menunggu diambil' DAN 'diambil'
     public function gudangBarangDiambil()
     {
-        $barangs = Barang::with(['penitip', 'kategori'])
-            ->whereIn('status', ['menunggu diambil', 'diambil'])
+        $barang = Barang::with('penitip')
+            ->whereIn('status', ['menunggu diambil', 'diambil']) // tampilkan keduanya
             ->orderBy('updated_at', 'desc')
             ->get()
             ->map(function ($b) {
                 return [
                     'idProduk'     => $b->idProduk,
-                    'donasiID'     => $b->donasiID,
-                    'penitipID'    => $b->penitipID,
                     'namaProduk'   => $b->namaProduk,
                     'namaPenitip'  => $b->penitip->nama ?? 'Tidak ditemukan',
-                    'kategoriID'   => $b->kategoriID,
-                    'namaKategori' => $b->kategori ? $b->kategori->namaKategori : null,
                     'status'       => $b->status,
                     'tglSelesai'   => $b->tglSelesai,
                     'gambar_url'   => $b->gambar ? url('storage/' . $b->gambar) : null,
                     'gambar2_url'  => $b->gambar2 ? url('storage/' . $b->gambar2) : null,
-                    'created_at'   => $b->created_at,
-                    'updated_at'   => $b->updated_at,
                 ];
             });
 
-        return response()->json($barangs);
+        return response()->json($barang);
     }
 
-    public function update(Request $request, $id)
+    public function available()
     {
-        $barang = Barang::find($id);
-
-        if (!$barang) {
-            return response()->json(['message' => 'Barang tidak ditemukan'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'penitipID'    => 'sometimes|exists:penitips,penitipID',
-            'namaProduk'   => 'sometimes|string|max:255',
-            'deskripsi'    => 'sometimes|string',
-            'harga'        => 'sometimes|numeric',
-            'kategoriID'   => 'sometimes|nullable|exists:kategori,idKategori',
-            'status'       => 'sometimes|in:aktif,menunggu diambil,diambil,didonasikan,diperpanjang',
-            'tglMulai'     => 'sometimes|date',
-            'tglSelesai'   => 'sometimes|date|after_or_equal:tglMulai',
-            'garansi'      => 'sometimes|date',
-            'gambar1'      => 'sometimes|image|mimes:jpeg,jpg,png|max:2048',
-            'gambar2'      => 'sometimes|image|mimes:jpeg,jpg,png|max:2048',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['message' => $validator->errors()->first()], 422);
-        }
-
-        $data = $request->only(['penitipID', 'namaProduk', 'deskripsi', 'harga', 'kategoriID', 'status', 'tglMulai', 'tglSelesai', 'garansi']);
-
-        if ($request->hasFile('gambar1')) {
-            if ($barang->gambar) {
-                Storage::disk('public')->delete($barang->gambar);
-            }
-            $data['gambar'] = $request->file('gambar1')->store('barang_foto', 'public');
-        }
-
-        if ($request->hasFile('gambar2')) {
-            if ($barang->gambar2) {
-                Storage::disk('public')->delete($barang->gambar2);
-            }
-            $data['gambar2'] = $request->file('gambar2')->store('barang_foto', 'public');
-        }
-
-        $barang->update($data);
-
-        return response()->json(['message' => 'Barang berhasil diupdate', 'data' => $barang]);
-    }
-
-    public function destroy($id)
-    {
-        $barang = Barang::find($id);
-        if (!$barang) {
-            return response()->json(['message' => 'Barang tidak ditemukan'], 404);
-        }
-
-        if ($barang->gambar) {
-            Storage::disk('public')->delete($barang->gambar);
-        }
-        if ($barang->gambar2) {
-            Storage::disk('public')->delete($barang->gambar2);
-        }
-        $barang->delete();
-
-        return response()->json(['message' => 'Barang berhasil dihapus']);
-    }
-
-    public function checkExpiredAndDonate()
-{
-    $currentDate = Carbon::now();
-    $barangs = Barang::where('status', '!=', 'terjual')
-        ->where('status', '!=', 'didonasikan')
-        ->where('status', '!=', 'diperpanjang')
-        ->where('status', '!=', 'aktif')
-        ->get();
-
-    $updated = false;
-    foreach ($barangs as $barang) {
-        $tglSelesai = Carbon::parse($barang->tglSelesai);
-        $daysSinceExpired = $currentDate->diffInDays($tglSelesai);
-
-        if ($daysSinceExpired > 7) {
-            $barang->status = 'didonasikan'; 
-            $barang->save();
-            $updated = true;
-            Log::info("Barang ID {$barang->idProduk} diubah ke 'didonasikan' karena melebihi 7 hari setelah {$barang->tglSelesai}");
-        }
-    }
-
-    if ($updated) {
-        return response()->json(['message' => 'Status barang yang kedaluwarsa diperbarui ke didonasikan.']);
-    } else {
-        return response()->json(['message' => 'Tidak ada barang yang perlu diubah statusnya.']);
-    }
-}
-
-    public function getMonthlySales(Request $request)
-    {
-        $year = $request->query('year', Carbon::now()->year);
-
-        $salesData = Barang::where('status', 'terjual')
-            ->whereYear('updated_at', $year)
-            ->selectRaw('MONTH(updated_at) as month, COUNT(*) as jumlahTerjual, SUM(harga) as jumlahKotor')
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get()
-            ->map(function ($item) {
-                $monthName = Carbon::create()->month($item->month)->translatedFormat('F');
-                return [
-                    'bulan' => $monthName,
-                    'jumlahTerjual' => $item->jumlahTerjual,
-                    'jumlahKotor' => $item->jumlahKotor,
-                ];
-            });
-
-        // Fill in missing months with zero values
-        $allMonths = collect(range(1, 12))->map(function ($month) use ($year, $salesData) {
-            $monthName = Carbon::create()->month($month)->translatedFormat('F');
-            $existing = $salesData->firstWhere('bulan', $monthName);
-            return $existing ?: [
-                'bulan' => $monthName,
-                'jumlahTerjual' => 0,
-                'jumlahKotor' => 0,
+        try{
+        $barang = Barang::where('status', 'aktif')->get()->map(function ($b) {
+            return [
+                'idProduk'     => $b->idProduk,
+                'namaProduk'   => $b->namaProduk,
+                'deskripsi'    => $b->deskripsi,
+                'harga'        => $b->harga,
+                'kategori'     => $b->kategori,
+                'status'       => $b->status,
+                'gambar_url'   => $b->gambar ? url('storage/' . $b->gambar) : null,
+                'gambar2_url'  => $b->gambar2 ? url('storage/' . $b->gambar2) : null,
+                'tglMulai'     => $b->tglMulai,
+                'tglSelesai'   => $b->tglSelesai,
+                'garansi'      => $b->garansi,
             ];
         });
 
-        return response()->json($allMonths);
+        return response()->json($barang);
+    } catch (\Exception $e) {
+        \Log::error('❌ ERROR di BarangController@available: ' . $e->getMessage());
+        return response()->json(['error' => 'Internal Server Error'], 500);
+    }
     }
 
-    public function getMonthlyCommissions(Request $request)
-    {
-        $month = $request->query('month');
-        $year = $request->query('year', Carbon::now()->year);
+    public function showDetailMobile($id)
+{
+    try {
+        $barang = \App\Models\Barang::find($id);
 
-        // Validate month input and map to month number
-        $monthMap = [
-            'Januari' => 1,
-            'Februari' => 2,
-            'Maret' => 3,
-            'April' => 4,
-            'Mei' => 5,
-            'Juni' => 6,
-            'Juli' => 7,
-            'Agustus' => 8,
-            'September' => 9,
-            'Oktober' => 10,
-            'November' => 11,
-            'Desember' => 12,
-        ];
-
-        if (!$month || !array_key_exists($month, $monthMap)) {
-            return response()->json(['message' => 'Bulan tidak valid'], 400);
+        if (!$barang) {
+            return response()->json(['message' => '❌ Barang tidak ditemukan'], 404);
         }
 
-        $monthNumber = $monthMap[$month];
+        return response()->json([
+    'idProduk' => $barang->idProduk,
+    'namaProduk' => $barang->namaProduk,
+    'deskripsi' => $barang->deskripsi,
+    'harga' => $barang->harga,
+    'kategori' => $barang->kategori,
+    'status' => $barang->status,
+    'gambar_url' => $barang->gambar ? url('storage/' . $barang->gambar) : null,
+    'gambar2_url' => $barang->gambar2 ? url('storage/' . $barang->gambar2) : null,
+    'tglMulai' => $barang->tglMulai ? date('Y-m-d', strtotime($barang->tglMulai)) : null,
+    'tglSelesai' => $barang->tglSelesai ? date('Y-m-d', strtotime($barang->tglSelesai)) : null,
+    'garansi' => $barang->garansi ? date('Y-m-d', strtotime($barang->garansi)) : null,
+    'penitipID' => $barang->penitipID,
+    'created_at' => $barang->created_at ? $barang->created_at->toDateTimeString() : null,
+]);
 
-        $barangs = Barang::where('status', 'terjual')
-            ->whereYear('updated_at', $year)
-            ->whereMonth('updated_at', $monthNumber)
-            ->with('penitip')
-            ->get()
-            ->map(function ($b) {
-                $masukDate = Carbon::parse($b->tglMulai);
-                $lakuDate = Carbon::parse($b->updated_at);
-                $daysDiff = $masukDate->diffInDays($lakuDate);
-
-                $baseKomisiReUseMart = $b->harga * 0.20; // 20% base commission
-                $komisiHunter = 0;
-                $bonusPenitip = 0;
-
-                if ($daysDiff < 7) {
-                    $komisiHunter = $b->hasHunter ? $b->harga * 0.05 : 0; // 5% if hasHunter is 1
-                    $bonusPenitip = $baseKomisiReUseMart * 0.10; // 10% bonus for penitip
-                } else {
-                    $baseKomisiReUseMart = $b->harga * 0.30; // 30% if >= 7 days
-                }
-
-                $komisiReUseMart = $baseKomisiReUseMart - $bonusPenitip;
-
-                return [
-                    'idProduk' => $b->idProduk,
-                    'kode' => 'P' . str_pad($b->idProduk, 3, '0', STR_PAD_LEFT), // Generate code like P001
-                    'namaProduk' => $b->namaProduk,
-                    'harga' => $b->harga,
-                    'tanggalMasuk' => $b->tglMulai->format('d/m/Y'),
-                    'tanggalLaku' => $lakuDate->format('d/m/Y'),
-                    'hasHunter' => (bool)$b->hasHunter, // Convert tinyint to boolean
-                    'idPenitip' => $b->penitipID,
-                    'namaPenitip' => $b->penitip->nama ?? 'Tidak ditemukan',
-                    'komisiHunter' => $komisiHunter,
-                    'komisiReUseMart' => $komisiReUseMart,
-                    'bonusPenitip' => $bonusPenitip,
-                ];
-            });
-
-        return response()->json($barangs);
+    } catch (\Exception $e) {
+        \Log::error('❌ ERROR @showDetailMobile: ' . $e->getMessage());
+        return response()->json(['message' => 'Internal Server Error'], 500);
     }
+}
 
-    public function gudangStok()
-    {
-        $currentDate = Carbon::now();
-        $barangs = Barang::whereIn('status', ['aktif', 'diperpanjang'])
-            // ->where(function ($query) use ($currentDate) {
-            //     $query->where('tglSelesai', '>=', $currentDate)
-            //           ->orWhereNull('tglSelesai');
-            // })
-            ->with('penitip')
-            ->get()
-            ->map(function ($b) {
-                return [
-                    'idProduk' => $b->idProduk,
-                    'kode' => 'P' . str_pad($b->idProduk, 3, '0', STR_PAD_LEFT),
-                    'namaProduk' => $b->namaProduk,
-                    'penitipID' => $b->penitipID,
-                    'namaPenitip' => $b->penitip->nama ?? 'Tidak ditemukan',
-                    'tanggalMasuk' => $b->tglMulai ? Carbon::parse($b->tglMulai)->format('d/m/Y') : '-',
-                    'perpanjangan' => $b->status === 'diperpanjang',
-                    'idHunter' => null, // Adjust if hunter data exists in a related table
-                    'namaHunter' => null, // Adjust if hunter data exists in a related table
-                    'harga' => $b->harga,
-                ];
-            });
 
-        return response()->json($barangs);
-    }
+
+
 }

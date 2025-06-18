@@ -12,16 +12,10 @@ class Pembeli extends Authenticatable
 
     protected $table = 'pembelis';
     protected $primaryKey = 'pembeliID';
-    public $incrementing = true;
-    protected $keyType = 'int';
 
 
     protected $fillable = [
-        'nama', 'email', 'password', 'nomorHP', 'alamat', 'poinLoyalitas', 'alamatID', 'ulasanID', 'role',
-    ];
-
-    protected $casts = [
-        'poinLoyalitas' => 'integer',
+        'nama', 'email', 'password', 'nomorHP', 'alamat', 'poinLoyalitas', 'alamatID', 'ulasanID', 'role', 'fcm_token'
     ];
 
     protected $hidden = [
@@ -31,16 +25,6 @@ class Pembeli extends Authenticatable
     public function alamatsIni()
     {
         return $this->hasMany(AlamatIni::class, 'pembeliID');
-    }
-
-    public function transaksiMerchandise()
-    {
-        return $this->hasMany(TransaksiMerchandise::class, 'pembeliID', 'pembeliID');
-    }
-
-    public function transaksis() 
-    {
-        return $this->hasMany(Transaksi::class, 'pembeliID', 'pembeliID');
     }
 
 

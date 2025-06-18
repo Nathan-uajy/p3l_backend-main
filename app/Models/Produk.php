@@ -19,5 +19,10 @@ class Produk extends Model
         'tglSelesai', 'garansi', 'gambar',
     ];
 
+    public function penitip()
+    {
+        return $this->belongsTo(Penitip::class, 'penitipID', 'penitipID');
+    }
+
     
 }

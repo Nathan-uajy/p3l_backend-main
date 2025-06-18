@@ -9,11 +9,48 @@ class Donasi extends Model
 {
     use HasFactory;
 
-    protected $table = 'donasi';
+    /**
+     * Nama tabel yang terhubung dengan model ini.
+     */
+    protected $table = 'donasis';
+
+    /**
+     * Nama primary key.
+     */
     protected $primaryKey = 'donasiID';
 
+    /**
+     * Atribut yang dapat diisi secara massal.
+     * Sesuaikan dengan nama kolom di migration Anda.
+     */
     protected $fillable = [
-        'tanggalDonasi',
-        'statusDonasi',
+        'produkID',
+        'organisasiID',
+        'namaPenerima',
+        'tanggal_donasi',
+        'jumlah',
     ];
+
+    /**
+     * Tentukan tipe data untuk kolom tertentu.
+     */
+    protected $casts = [
+        'tanggal_donasi' => 'date',
+    ];
+
+    /**
+     * Definisikan relasi "belongsTo": setiap Donasi terkait dengan satu Produk.
+     */
+    public function produk()
+    {
+        return $this->belongsTo(Barang::class, 'produkID', 'idProduk');
+    }
+
+    /**
+     * Definisikan relasi "belongsTo": setiap Donasi diberikan ke satu Organisasi.
+     */
+    public function organisasi()
+    {
+        return $this->belongsTo(Organisasi::class, 'organisasiID', 'organisasiID');
+    }
 }

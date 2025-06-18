@@ -11,7 +11,7 @@ class Pegawai extends Authenticatable
     use HasApiTokens, Notifiable;
 
     protected $fillable = [
-        'nama', 'email', 'password', 'role', 'jabatan',
+        'nama', 'email', 'password', 'role', 'jabatan', 'fcm_token'
     ];
 
     protected $hidden = [
