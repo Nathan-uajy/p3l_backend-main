@@ -32,4 +32,12 @@ class Komisi extends Model
     {
         return $this->belongsTo(Penitip::class, 'penitipID', 'penitipID');
     }
+
+    public function penjadwalan()
+{
+    return $this->belongsTo(\App\Models\Penjadwalan::class, 'penjadwalanID', 'penjadwalanID');
+}
+
+
+
 }

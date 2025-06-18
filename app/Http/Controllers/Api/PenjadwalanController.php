@@ -63,73 +63,66 @@ class PenjadwalanController extends Controller
         $transaksi->status = $tipe === 'pengiriman' ? 'siap dikirim' : 'siap diambil';
         $transaksi->save();
 
-// $factory = (new Factory)->withServiceAccount(storage_path('firebase/reusemart-5c1fc-d3b489b21ba7.json'));
-// $messaging = $factory->createMessaging();
+$factory = (new Factory)->withServiceAccount(storage_path('firebase/reusemart-5c1fc-d3b489b21ba7.json'));
+$messaging = $factory->createMessaging();
 
 // ✅ Ambil token-token
-// $pembeliToken = optional($transaksi->pembeli)->fcm_token;
-// $detail = $transaksi->detailTransaksis->first();
+$pembeliToken = optional($transaksi->pembeli)->fcm_token;
+$detail = $transaksi->detailTransaksis->first();
 
-// Log::info('🧩 Detail transaksi pertama:', [
-//     'produkID' => $detail?->produk?->idProduk,
-//     'penitipID' => $detail?->produk?->penitip?->penitipID,
-//     'penitipToken' => $detail?->produk?->penitip?->fcm_token,
-// ]);
+Log::info('🧩 Detail transaksi pertama:', [
+    'produkID' => $detail?->produk?->idProduk,
+    'penitipID' => $detail?->produk?->penitip?->penitipID,
+    'penitipToken' => $detail?->produk?->penitip?->fcm_token,
+]);
 
-// $pembeliToken = optional($transaksi->pembeli)->fcm_token;
-// // $penitipToken = optional($detail?->produk?->penitip)->fcm_token;
-// $penitipToken = $transaksi->detailTransaksis
-//             ->map(fn($detail) => optional($detail->produk->penitip)->fcm_token)
-//             ->filter() // Hapus token yang null atau kosong
-//             ->unique() // Hapus token duplikat jika ada penitip yang sama
-//             ->values() // Reset index array
-//             ->all();  // Ubah menjadi array biasa
-// $penjadwalan->load('pegawai');
-// $kurirToken = optional($penjadwalan->pegawai)->fcm_token;
-// Log::info('📥 Token yang akan digunakan:', [
-//     'pembeli' => $pembeliToken,
-//     'penitip' => $penitipToken,
-//     'kurir' => $kurirToken,
-// ]);
+$pembeliToken = optional($transaksi->pembeli)->fcm_token;
+$penitipToken = optional($detail?->produk?->penitip)->fcm_token;
+$kurirToken = optional($penjadwalan->pegawai)->fcm_token;
+Log::info('📥 Token yang akan digunakan:', [
+    'pembeli' => $pembeliToken,
+    'penitip' => $penitipToken,
+    'kurir' => $kurirToken,
+]);
 
 // 📨 Buat isi notifikasi
-// $judul = $tipe === 'pengiriman' ? 'Pesanan Akan Dikirim' : 'Pesanan Siap Diambil';
-// $pesan = $tipe === 'pengiriman'
-//     ? 'Barang kamu akan dikirim sesuai jadwal yang telah ditentukan.'
-//     : 'Silakan datang mengambil barangmu sesuai jadwal yang ditentukan.';
+$judul = $tipe === 'pengiriman' ? 'Pesanan Akan Dikirim' : 'Pesanan Siap Diambil';
+$pesan = $tipe === 'pengiriman'
+    ? 'Barang kamu akan dikirim sesuai jadwal yang telah ditentukan.'
+    : 'Silakan datang mengambil barangmu sesuai jadwal yang ditentukan.';
 
 // 📤 Kirim ke pembeli
-// if ($pembeliToken) {
-//     try {
-//         $messaging->send(
-//             CloudMessage::withTarget('token', $pembeliToken)
-//                 ->withNotification(Notification::create($judul, $pesan))
-//                 ->withData(['tipe' => 'transaksi', 'id' => (string) $transaksi->transaksiID])
-//         );
-//         Log::info('✅ Notifikasi ke pembeli berhasil.');
-//     } catch (\Throwable $e) {
-//         Log::error('❌ Notifikasi ke pembeli gagal.', [
-//             'message' => $e->getMessage(),
-//             'trace' => $e->getTraceAsString(),
-//         ]);
-//     }
-// }
+if ($pembeliToken) {
+    try {
+        $messaging->send(
+            CloudMessage::withTarget('token', $pembeliToken)
+                ->withNotification(Notification::create($judul, $pesan))
+                ->withData(['tipe' => 'transaksi', 'id' => (string) $transaksi->transaksiID])
+        );
+        Log::info('✅ Notifikasi ke pembeli berhasil.');
+    } catch (\Throwable $e) {
+        Log::error('❌ Notifikasi ke pembeli gagal.', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+    }
+}
 
 // 📤 Kirim ke penitip
-// if ($penitipToken) {
-//     try {
-//         $messaging->send(
-//             CloudMessage::withTarget('token', $penitipToken)
-//                 ->withNotification(Notification::create('Update Barang', 'Barang titipan Anda sudah dijadwalkan.'))
-//         );
-//         Log::info('✅ Notifikasi ke penitip berhasil.');
-//     } catch (\Throwable $e) {
-//         Log::error('❌ Notifikasi ke penitip gagal.', [
-//             'message' => $e->getMessage(),
-//             'trace' => $e->getTraceAsString(),
-//         ]);
-//     }
-// }
+if ($penitipToken) {
+    try {
+        $messaging->send(
+            CloudMessage::withTarget('token', $penitipToken)
+                ->withNotification(Notification::create('Update Barang', 'Barang titipan Anda sudah dijadwalkan.'))
+        );
+        Log::info('✅ Notifikasi ke penitip berhasil.');
+    } catch (\Throwable $e) {
+        Log::error('❌ Notifikasi ke penitip gagal.', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+    }
+}
 
 // 📤 Kirim ke kurir (jika pengiriman)
 if ($kurirToken && $tipe === 'pengiriman') {
@@ -236,8 +229,7 @@ if ($kurirToken && $tipe === 'pengiriman') {
 
     public function konfirmasiDiterima($id)
     {
-        // Menggunakan findOrFail untuk mengambil data penjadwalan dan relasi transaksinya.
-        $penjadwalan = \App\Models\Penjadwalan::with('transaksi.pembeli', 'transaksi.detailTransaksis.produk.penitip')->findOrFail($id);
+        $penjadwalan = \App\Models\Penjadwalan::with('transaksi')->findOrFail($id);
 
         // Validasi: hanya lanjut jika status sebelumnya sudah "berhasil dikirim" atau "berhasil diambil"
         if (!in_array($penjadwalan->status, ['berhasil dikirim', 'berhasil diambil'])) {
@@ -248,97 +240,13 @@ if ($kurirToken && $tipe === 'pengiriman') {
         $penjadwalan->status = 'selesai';
         $penjadwalan->save();
 
-        // Pastikan relasi transaksi ada sebelum mencoba menyimpannya
-        if ($penjadwalan->transaksi) {
-            $penjadwalan->transaksi->status = 'selesai';
-            $penjadwalan->transaksi->save();
-        }
-
-        try {
-            $factory = (new Factory)->withServiceAccount(storage_path('firebase/reusemart-5c1fc-d3b489b21ba7.json'));
-            $messaging = $factory->createMessaging();
-
-            // Kirim notifikasi ke Pembeli
-            $pembeliToken = optional($penjadwalan->transaksi->pembeli)->fcm_token;
-            if ($pembeliToken) {
-                $messaging->send(
-                    CloudMessage::withTarget('token', $pembeliToken)
-                        ->withNotification(Notification::create(
-                            '✅ Transaksi Selesai', 
-                            'Terima kasih telah berbelanja di ReUse Mart! Jangan lupa berikan ulasanmu.'
-                        ))
-                        ->withData(['tipe' => 'transaksi', 'id' => (string)$penjadwalan->transaksi->transaksiID])
-                );
-            }
-
-            // Kirim notifikasi ke semua Penitip yang terlibat
-            // PERBAIKAN: Nama variabel disamakan menjadi $penitipTokens (dengan 's')
-            // $penitipToken = $penjadwalan->transaksi->detailTransaksis
-            //     ->map(fn($detail) => optional($detail->produk->penitip)->fcm_token)
-            //     ->filter()->unique()->values()->all();
-            
-            $penitipToken = optional($penjadwalan->transaksi->penitip)->fcm_token;
-            if ($penitipToken) {
-                $messaging->send(
-                    CloudMessage::withTarget('token', $penitipToken)
-                        ->withNotification(Notification::create(
-                            '💰 Dana Segera Cair!', 
-                            'Barang Anda telah sampai di tangan pembeli. Pendapatan akan segera diproses.'
-                        ))
-                        // ->withData(['tipe' => 'penjualan_selesai', 'id' => (string)$transaksi->transaksiID]);
-                );
-            }
-
-            Log::info("Notifikasi 'Barang Sampai' untuk transaksi #{$penjadwalan->transaksi->transaksiID} berhasil diproses.");
-
-        } catch (\Throwable $e) {
-            // Jika notifikasi gagal, proses utama tetap dianggap berhasil
-            // Kegagalan pengiriman notifikasi dicatat di log tanpa mengembalikan error ke user
-            Log::error('Gagal mengirim notifikasi Barang Sampai: ' . $e->getMessage());
-        }
+        $penjadwalan->transaksi->status = 'selesai';
+        $penjadwalan->transaksi->save();
 
         return response()->json([
             'message' => '✅ Transaksi selesai dikonfirmasi.',
             'penjadwalan' => $penjadwalan
         ]);
-    }
-
-    public function getTugas(Request $request)
-    {
-        // Mengambil data kurir yang sedang login melalui token Sanctum
-        $kurir = $request->user();
-
-        // Mengambil data penjadwalan dengan relasi yang dibutuhkan
-        $penjadwalans = Penjadwalan::with([
-            'transaksi.pembeli',
-            'transaksi.detailTransaksis.produk'
-        ])
-        // ->where('pegawaiID', $kurir->pegawaiID) // <-- Filter paling penting!
-        ->where('pegawaiID', $kurir->pegawaiID) 
-        ->where('tipe', 'pengiriman') // Hanya menampilkan tugas pengiriman
-        // ->where('status', 'selesai')
-        ->orderBy('tanggal', 'desc')
-        ->orderBy('waktu', 'desc')
-        ->get();
-
-        // Transformasi data agar sesuai dengan kebutuhan UI di Flutter
-        $result = $penjadwalans->map(function ($jadwal) {
-            return [
-                'penjadwalanID' => $jadwal->penjadwalanID,
-                'tanggal' => $jadwal->tanggal,
-                'waktu' => date('H:i', strtotime($jadwal->waktu)),
-                'tipe' => $jadwal->tipe,
-                'status' => $jadwal->status,
-                'namaPembeli' => $jadwal->transaksi->pembeli->nama ?? 'N/A',
-                'alamat' => $jadwal->transaksi->pembeli->alamat ?? 'N/A',
-                'transaksiID' => $jadwal->transaksiID,
-                'produk' => $jadwal->transaksi->detailTransaksis->map(function ($d) {
-                    return $d->produk->namaProduk ?? 'Produk Dihapus';
-                })->implode(', '), // Menggabungkan nama produk menjadi satu string
-            ];
-        });
-
-        return response()->json($result);
     }
 
 

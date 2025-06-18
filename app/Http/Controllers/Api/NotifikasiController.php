@@ -61,7 +61,7 @@ class NotifikasiController extends Controller
     public function kirimNotifUji()
 {
     // Ambil token penitip tertentu (misalnya penitip ID 35)
-    $penitip = Penitip::find(3);
+    $penitip = Penitip::find(35);
     $token = $penitip?->fcm_token;
 
     if (!$token) {

@@ -34,5 +34,11 @@ class Barang extends Model
         return $this->belongsTo(Penitip::class, 'penitipID', 'penitipID');
     }
 
+    public function produk()
+{
+    return $this->hasOne(Produk::class, 'barangID', 'barangID');
+}
+
+
     
 }

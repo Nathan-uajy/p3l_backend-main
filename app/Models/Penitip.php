@@ -10,7 +10,6 @@ class Penitip extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
-    protected $table = 'penitips';
     protected $primaryKey = 'penitipID';
 
     protected $fillable = [

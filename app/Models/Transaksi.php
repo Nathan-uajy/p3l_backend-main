@@ -47,11 +47,15 @@ class Transaksi extends Model
         return $this->belongsTo(\App\Models\AlamatIni::class, 'alamatID', 'alamatID');
     }
 
-
     public function penjadwalanPengiriman()
     {
         return $this->hasOne(Penjadwalan::class, 'transaksiID')->where('tipe', 'pengiriman');
     }
+
+    public function penjadwalans()
+{
+    return $this->hasMany(\App\Models\Penjadwalan::class, 'transaksiID');
+}
 
 
 }

@@ -18,10 +18,4 @@ class RequestDonasi extends Model
         'organisasiID',
         'donasiID',
     ];
-
-    public function organisasi()
-    {
-        // Sesuaikan 'App\Models\Organisasi' dan 'organisasi_id' jika perlu
-        return $this->belongsTo(Organisasi::class, 'organisasiID');
-    }
 }

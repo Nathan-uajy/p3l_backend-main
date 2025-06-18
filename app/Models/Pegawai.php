@@ -10,15 +10,17 @@ class Pegawai extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
+    protected $primaryKey = 'pegawaiID';
+
     protected $fillable = [
-        'nama', 'email', 'password', 'role', 'jabatan', 'fcm_token'
+        'nama', 'email', 'password', 'role', 'jabatan', 'tanggalLahir', 'jabatan', 'fcm_token'
     ];
 
     protected $hidden = [
         'password',
     ];
 
-    protected $primaryKey = 'pegawaiID';
+    // protected $primaryKey = 'pegawaiID';
     public $incrementing = true;
     protected $keyType = 'int';
 
