@@ -3,41 +3,31 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pembeli;
 use Illuminate\Http\Request;
+use App\Models\Pembeli;
+use App\Models\Transaksi;
 
 class PembeliController extends Controller
 {
-    // GET /api/pembeli/me
-    // public function me(Request $request)
-    // {
-    //     $pembeli = Pembeli::where('user_id', $request->user()->id)->first();
-
-    //     if (!$pembeli) {
-    //         return response()->json(['message' => 'Data pembeli tidak ditemukan'], 404);
-    //     }
-
-    //     return response()->json([
-    //         'namaPenerima' => $pembeli->nama_pembeli,
-    //         'noHpPenerima' => $pembeli->no_hp
-    //     ]);
-    // }
-
-    // (Opsional) GET /api/pembeli
-    public function index()
+    public function profile(Request $request)
     {
-        // $pembeli = Pembeli::all();
-        $pembeli =  auth()->user();
-        return response()->json($pembeli);
+        \Log::info('Profile endpoint hit', ['user' => $request->user()]);
+        $pembeli = $request->user();
+        return response()->json([
+            'pembeliID' => $pembeli->pembeliID,
+            'nama' => $pembeli->nama,
+            'email' => $pembeli->email,
+            'nomorHP' => $pembeli->nomorHP,
+            'alamat' => $pembeli->alamat,
+            'poinLoyalitas' => $pembeli->poinLoyalitas,
+            'role' => 'pembeli',
+        ]);
     }
 
-    // (Opsional) GET /api/pembeli/{id}
-    public function show($id)
+    public function updateProfile(Request $request)
     {
-        $pembeli = Pembeli::find($id);
-        if (!$pembeli) {
-            return response()->json(['message' => 'Pembeli tidak ditemukan'], 404);
-        }
+        $pembeli = $request->user();
+        $pembeli->update($request->only(['nama', 'email', 'nomorHP', 'alamat']));
         return response()->json($pembeli);
     }
 }

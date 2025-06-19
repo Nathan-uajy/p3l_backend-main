@@ -13,7 +13,7 @@ class AlamatController extends Controller
     public function index(Request $request)
 {
     $user = $request->user();
-    $query = Alamat::where('user_id', $user->pembeliID);
+    $query = Alamat::where('user_id', $user->id);
 
     if ($request->has('search')) {
         $search = $request->input('search');
@@ -39,10 +39,10 @@ class AlamatController extends Controller
 
         // Tambahkan otomatis nama & noHp dari user login
         $alamat = Alamat::create([
-            'user_id'        => $user->pembeliID,
+            'user_id'        => $user->id,
             'namaAlamat'     => $validated['namaAlamat'],
-            'namaPenerima'   => $user->nama,
-            'noHpPenerima'   => $user->nomorHP,
+            'namaPenerima'   => $user->name,
+            'noHpPenerima'   => $user->no_telp,
             'alamat'         => $validated['alamat'],
             'kodePos'        => $validated['kodePos'],
         ]);
@@ -80,8 +80,7 @@ class AlamatController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        // $alamat = Alamat::where('user_id', $request->user()->id)->findOrFail($id);
-        $alamat = Alamat::find($id);
+        $alamat = Alamat::where('user_id', $request->user()->id)->findOrFail($id);
         $alamat->delete();
 
         return response()->json(['message' => 'Alamat berhasil dihapus']);
