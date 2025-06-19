@@ -9,7 +9,7 @@ class Alamat extends Model
 {
     use HasFactory;
 
-    protected $table = 'alamats';
+    protected $table = 'alamat';
 
     protected $primaryKey = 'alamatID';
 

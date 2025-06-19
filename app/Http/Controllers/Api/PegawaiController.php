@@ -42,14 +42,6 @@ class PegawaiController extends Controller
         $data['password'] = Hash::make($data['password']);
         $data['role'] = 'pegawai';
 
-        // Upload foto KTP
-        // if ($request->hasFile('foto_ktp')) {
-        //     $file = $request->file('foto_ktp');
-        //     $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-        //     $file->storeAs('public/ktp', $filename);
-        //     $data['foto_ktp'] = 'storage/ktp/' . $filename;
-        // }
-
         $pegawai = Pegawai::create($data);
 
         return response()->json([
@@ -71,11 +63,6 @@ class PegawaiController extends Controller
             return response()->json(['message' => 'Pegawai tidak ditemukan'], 404);
         }
 
-        // Hapus foto KTP dari storage jika ada
-        // if ($penitip->foto_ktp && Storage::exists(str_replace('storage/', 'public/', $penitip->foto_ktp))) {
-        //     Storage::delete(str_replace('storage/', 'public/', $penitip->foto_ktp));
-        // }
-
         $pegawai->delete();
 
         return response()->json(['message' => 'Pegawai berhasil dihapus']);
@@ -87,10 +74,20 @@ class PegawaiController extends Controller
         return response()->json($kurirs);
     }
 
-    public function getGudangs()
+    public function me(Request $request)
     {
-        $gudangs = \App\Models\Pegawai::where('jabatan', 'gudang')->get(['pegawaiID', 'nama', 'email']);
-        return response()->json($gudangs);
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        return response()->json([
+            'pegawaiID' => $user->pegawaiID,
+            'nama'      => $user->nama,
+            'email'     => $user->email,
+            'role'      => $user->role,
+            'jabatan'   => $user->jabatan,
+        ]);
     }
 
 }

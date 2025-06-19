@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notifications', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id'); // penerima
-            $table->string('title');
-            $table->text('message');
-            $table->boolean('is_read')->default(false);
+        Schema::create('merchandise', function (Blueprint $table) {
+            $table->string('merchandiseID')->primary();
+            $table->string('nama');
+            $table->integer('jumlahPoin');
+            $table->integer('stock');
+            $table->string('foto')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('notifications');
+        Schema::dropIfExists('merchandise');
     }
 };

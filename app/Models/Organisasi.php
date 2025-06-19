@@ -10,7 +10,6 @@ class Organisasi extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
-    // protected $table = 'organisasi';
     protected $primaryKey = 'organisasiID';
 
     protected $fillable = [
