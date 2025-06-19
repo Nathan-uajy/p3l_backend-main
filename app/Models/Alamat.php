@@ -9,7 +9,7 @@ class Alamat extends Model
 {
     use HasFactory;
 
-    protected $table = 'alamat';
+    protected $table = 'alamats';
 
     protected $primaryKey = 'alamatID';
 
@@ -21,13 +21,5 @@ class Alamat extends Model
         'alamat',
         'kodePos',
     ];
-    public $timestamps = true;
-
-    // app/Models/Alamat.php
-
-    public function pembeli()
-    {
-        return $this->belongsTo(Pembeli::class, 'pembeliID');
-    }
-
+    public $timestamps = true; 
 }

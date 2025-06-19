@@ -9,45 +9,38 @@ class DetailTransaksi extends Model
 {
     use HasFactory;
 
+    protected $table = 'detail_transaksis'; // Sesuaikan jika nama tabel Anda berbeda
     protected $primaryKey = 'id_detail_transaksi';
-    protected $table = 'detail_transaksis';
+    public $incrementing = true;
+    protected $keyType = 'int';
+    public $timestamps = false; // Asumsi tidak ada created_at/updated_at di tabel ini
 
+    /**
+     * Atribut yang dapat diisi secara massal.
+     * Hanya ID yang relevan untuk disimpan dari sisi aplikasi.
+     * Kuantitas diasumsikan 1 karena barang bekas unik.
+     */
     protected $fillable = [
         'transaksiID',
         'produkID',
-        'jumlah',
-        'harga_satuan',
-        'subtotal'
+        // 'kuantitas', // Bisa ditambahkan jika Anda ingin eksplisit menyimpan 1
     ];
 
-    // Cast attributes to proper types
-    protected $casts = [
-        'jumlah' => 'integer',
-        'harga_satuan' => 'integer',
-        'subtotal' => 'integer',
-    ];
-
-    public $timestamps = true;
-
+    /**
+     * Relasi ke model Transaksi (parent).
+     */
     public function transaksi()
     {
-        return $this->belongsTo(Transaksi::class, 'transaksiID', 'transaksiID');
+        return $this->belongsTo(Transaksi::class, 'transaksiID', 'idTransaksi');
     }
 
+    /**
+     * Relasi ke model Produk.
+     */
     public function produk()
     {
-        return $this->belongsTo(Barang::class, 'produkID', 'idProduk');
-    }
-
-    // Calculate subtotal
-    public function getSubtotalAttribute()
-    {
-        // If subtotal is already set in database, return it
-        if (isset($this->attributes['subtotal']) && $this->attributes['subtotal'] > 0) {
-            return $this->attributes['subtotal'];
-        }
-        
-        // Otherwise calculate it
-        return ($this->jumlah ?? 1) * ($this->harga_satuan ?? 0);
+        // 'produkID' adalah foreign key di tabel ini (detail_transaksis)
+        // 'idProduk' adalah primary key di tabel 'produks'
+        return $this->belongsTo(Produk::class, 'produkID', 'idProduk');
     }
 }

@@ -12,31 +12,6 @@ use App\Models\User;
 class AuthController extends Controller
 {
 
-
-    public function getUser(Request $request)
-    {
-        $tipe = $request->header('tipe-akun');
-
-        switch ($tipe) {
-            case 'user':
-                $user = auth('sanctum')->user();
-                break;
-            case 'pegawai':
-                $user = \App\Models\Pegawai::where('id', auth()->id())->first();
-                break;
-            case 'penitip':
-                $user = \App\Models\Penitip::where('id', auth()->id())->first();
-                break;
-            case 'organisasi':
-                $user = \App\Models\Organisasi::where('id', auth()->id())->first();
-                break;
-            default:
-                return response()->json(['message' => 'Tipe akun tidak dikenali'], 400);
-        }
-
-        return response()->json(['user' => $user]);
-    }
-
     public function user(Request $request)
     {
         $tipe = $request->header('tipe-akun'); // ambil tipe akun dari header
@@ -105,38 +80,29 @@ public function register(Request $request)
     }
 
     public function updateProfile(Request $request)
-    {
-        $tipe = $request->header('tipe-akun');
-        $user = auth('sanctum')->user();
+{
+    $user = $request->user();
+    $tipe = $request->header('tipe-akun');
 
-        // Validasi
-        $request->validate([
-            'name' => 'required|string|max:100',
-            'email' => 'required|email',
-            'no_telp' => 'nullable|string',
-            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-        ]);
-
-        // Update field umum
-        $user->name = $request->name ?? $user->name;
-        $user->email = $request->email ?? $user->email;
-        $user->no_telp = $request->no_telp ?? $user->no_telp;
-
-        // Handle upload foto
-        if ($request->hasFile('foto')) {
-            $file = $request->file('foto');
-            $filename = time().'_'.$file->getClientOriginalName();
-            $path = $file->storeAs('public/profile', $filename);
-            $user->foto = 'storage/profile/' . $filename;
-        }
-
-        $user->save();
-
-        return response()->json([
-            'message' => 'Profil diperbarui.',
-            'user' => $user
-        ]);
+    if (!$user) {
+        return response()->json(['message' => 'User tidak ditemukan'], 404);
     }
+
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'handle' => 'nullable|string|max:255',
+        'email' => 'required|email|unique:' . $user->getTable() . ',email,' . $user->getKey() . ',' . $user->getKeyName(),
+        'no_telp' => 'nullable|string|max:20',
+    ]);
+
+    $user->update($validated);
+
+    return response()->json([
+        'message' => 'Profil berhasil diperbarui',
+        'user' => $user,
+        'tipe_akun' => $tipe,
+    ]);
+}
 
 
     public function logout(Request $request)

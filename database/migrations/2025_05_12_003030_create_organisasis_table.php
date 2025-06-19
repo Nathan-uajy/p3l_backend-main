@@ -12,14 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('organisasis', function (Blueprint $table) {
-            $table->unsignedBigInteger('id')->autoIncrement();
             $table->id('organisasiID');
             $table->string('email')->unique();
             $table->string('kontak');
             $table->string('alamat');
             $table->string('namaOrganisasi');
             $table->string('role')->default('organisasi');
-            $table->string('password');
+            $table->string('password'); // agar bisa login
             $table->timestamps();
         });
     }

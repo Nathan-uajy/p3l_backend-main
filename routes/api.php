@@ -7,90 +7,107 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AlamatController;
 use App\Http\Controllers\Api\MultiLoginController;
 use App\Http\Controllers\Api\PenitipController;
-use App\Http\Controllers\Api\RequestDonasiController;
-use App\Http\Controllers\Api\DonasiController;
 use App\Http\Controllers\Api\PegawaiController;
-use App\Http\Controllers\Api\BarangController;
-use App\Http\Controllers\Api\DetailTransaksiController;
-use App\Http\Controllers\Api\PenjadwalanController;
-use App\Http\Controllers\Api\GudangController;
-use App\Http\Controllers\Api\KategoriController;
-use App\Http\Controllers\Api\MerchandiseController;
-use App\Http\Controllers\Api\TransaksiMerchandiseController;
+use App\Http\Controllers\Api\OrganisasiController;
+use App\Http\Controllers\Api\LupaResetPassController;
 use App\Http\Controllers\Api\PembeliController;
+use App\Http\Controllers\Api\DiskusiController;
+use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\TransaksiController;
+use App\Http\Controllers\Api\NotifikasiController;
 
-Route::post('/multi-login', [MultiLoginController::class, 'login']);
-Route::post('/multi-register', [MultiLoginController::class, 'register']);
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return $request->user();
+// });
+
 Route::get('/produk', [ProdukController::class, 'index']);
-Route::post('/produk', [ProdukController::class, 'store']);
+Route::get('/produk/{id}', [ProdukController::class, 'show']);
+Route::get('/diskusiProduk/{id}', [DiskusiController::class, 'diskusiProduk']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', [AuthController::class, 'user']);
+// Route::get('/pembeli/{id}', [ProdukController::class, 'show']);
+// Route::get('/pegawai/{id}', [PegawaiController::class, 'show']);
+// Route::post('/register',[App\Http\Controllers\Api\AuthController::class,'register']);
+// Route::post('/login',[App\Http\Controllers\Api\AuthController::class,'login']);
+Route::post('/multi-login', [MultiLoginController::class, 'login']);
+// Route::post('/multi-register', [MultiLoginController::class, 'register']);
+Route::post('/multi-register', [MultiLoginController::class, 'register']);
+Route::post('/forgot-password', [LupaResetPassController::class, 'forgotPassword']);
+Route::post('/user-forgot-password', [LupaResetPassController::class, 'gantiPassword']);
+// Route::post('/user-forgot-password', [LupaResetPassController::class, 'gantiPassword']);
+// Route::post('/reset-password', [LupaResetPassController::class, 'resetPassword']);
+Route::post('/pegawai/{id}/reset-password', [LupaResetPassController::class, 'resetPassword']);
+
+Route::middleware('auth:sanctum')->group(function(){
+    Route::get('/user', [App\Http\Controllers\Api\AuthController::class, 'user']);
     Route::put('/user/update', [AuthController::class, 'updateProfile']);
+    Route::post('/alamat', [AlamatController::class, 'store']);
+    Route::get('/alamat', [AlamatController::class, 'index']);
+    Route::get('/alamat/{id}', [AlamatController::class, 'show']);
+    Route::put('/alamat/{id}', [AlamatController::class, 'update']);
+    Route::delete('/alamat/{id}', [AlamatController::class, 'destroy']);
+    Route::post('/penitip', [PenitipController::class, 'store']);
+    Route::get('/penitip', [PenitipController::class, 'index']); // show all
+    Route::delete('/penitip/{id}', [PenitipController::class, 'destroy']); // delete
+    Route::post('/pegawai', [PegawaiController::class, 'store']);
+    Route::get('/pegawai', [PegawaiController::class, 'index']); // show all
+    Route::delete('/pegawai/{id}', [PegawaiController::class, 'destroy']); // delete
+    Route::put('/pegawai/{id}', [PegawaiController::class, 'update']);
+    Route::get('/pegawai/{id}', [PegawaiController::class, 'show']);
+    // routes/api.php
+    Route::get('/diskusi/{produkID}', [DiskusiController::class, 'index']);
+    Route::post('/diskusi', [DiskusiController::class, 'store']);
 
-    Route::apiResource('alamat', AlamatController::class);
-    // Route::apiResource('penitip', PenitipController::class);
-    Route::get('/penitips', [PenitipController::class, 'index']);
-    Route::get('/penitip/search', [PenitipController::class, 'search']);
-    Route::get('/penitip/list-with-sales', [PenitipController::class, 'listWithSales']);
-    Route::post('/penitip/{penitipID}/set-top-seller', [PenitipController::class, 'setTopSeller']);
-    Route::get('/barang-penitip/{penitipID}', [PenitipController::class, 'getBarangDititipkan']);
+    // Route::post('/organisasi', [OrganisasiController::class, 'store']);
+    Route::get('/organisasi', [OrganisasiController::class, 'index']); // show all
+    Route::delete('/organisasi/{id}', [OrganisasiController::class, 'destroy']); // delete
+    Route::put('/organisasi/{id}', [OrganisasiController::class, 'update']); // delete
 
-    Route::apiResource('request-donasi', RequestDonasiController::class);
-    Route::apiResource('donasi', DonasiController::class);
-    Route::apiResource('pegawai', PegawaiController::class);
-    Route::get('pegawai/me', [PegawaiController::class, 'me']);
-    Route::get('/kurirs', [PegawaiController::class, 'getKurirs']);
+    Route::get('/pembeli', [PembeliController::class, 'index']);
+    Route::get('/pembeli/{id}', [PembeliController::class, 'show']);
 
-    Route::get('/pembeli/profile', [PembeliController::class, 'profile']);
-    Route::put('/pembeli/profile', [PembeliController::class, 'updateProfile']);
-    Route::get('/pembeli/transactions', [TransaksiController::class, 'buyerHistory']);
-    Route::get('/penitip/profile', [PenitipController::class, 'profile']);
-    
-    // Routes for BarangController (specific to penitip-related operations)
-    Route::get('/barang-penitip/{id}', [BarangController::class, 'getByPenitip']);
-    Route::get('/barang/search-by-penitip', [BarangController::class, 'search']);
-    Route::put('/barang-perpanjang/{id}', [BarangController::class, 'perpanjang']);
-    Route::put('/barang/konfirmasi-ambil/{id}', [BarangController::class, 'konfirmasiAmbil']);
-    Route::put('/barang/donasikan/{id}', [BarangController::class, 'donasikan']);
-    Route::put('/barang/mark-as-taken/{id}', [BarangController::class, 'markAsTaken']);
-    Route::get('/barang/semua-menunggu-diambil', [BarangController::class, 'semuaMenungguDiambil']);
-    Route::put('/barang-diterima/{id}', [BarangController::class, 'tandaiDiambil']);
-    Route::get('/gudang-barang-diambil', [BarangController::class, 'gudangBarangDiambil']);
-    Route::post('/barang/check-expired-and-donate', [BarangController::class, 'checkExpiredAndDonate']);
-    Route::get('/barang/monthly-sales', [BarangController::class, 'getMonthlySales']);
-    Route::get('/barang/monthly-commissions', [BarangController::class, 'getMonthlyCommissions']);
-    Route::get('/barang/gudang-stok', [BarangController::class, 'gudangStok']);
+    Route::get('/active-cart', [CartController::class, 'index']);
+    Route::post('/active-cart/add', [CartController::class, 'addItem']);
+    // Kirim idProduk sebagai parameter biasa
+    Route::delete('/active-cart/item/{idProduk}', [CartController::class, 'removeItem']);
+    Route::delete('/active-cart/clear', [CartController::class, 'clearCart']);
 
-    // Routes for GudangController (warehouse operations)
-    Route::get('/gudang', [GudangController::class, 'index']);
-    Route::post('/gudang', [GudangController::class, 'store']);
-    Route::get('/gudang/{id}', [GudangController::class, 'show']);
-    Route::put('/gudang/{id}', [GudangController::class, 'update']);
-    Route::delete('/gudang/{id}', [GudangController::class, 'destroy']);
-    Route::get('/gudang/search', [GudangController::class, 'search']);
-    Route::get('/kategori', [KategoriController::class, 'index']);
-    // Transaksi and Detail Transaksi
-    Route::apiResource('transaksis', TransaksiController::class);
-    Route::apiResource('detail-transaksis', DetailTransaksiController::class);
-    Route::get('/gudang-transaksis', [TransaksiController::class, 'index']);
+    // Mengambil daftar transaksi milik pengguna yang login
+    // Route::get('/orders', [TransaksiController::class, 'index']);
 
-    // Penjadwalan
-    Route::post('/penjadwalans', [PenjadwalanController::class, 'store']);
-    Route::get('/penjadwalans', [PenjadwalanController::class, 'index']);
-    Route::put('/penjadwalans/{id}/update-status', [PenjadwalanController::class, 'updateStatus']);
-    Route::put('/penjadwalans/{id}/konfirmasi-selesai', [PenjadwalanController::class, 'konfirmasiSelesai']);
-    Route::put('/penjadwalans/{id}/konfirmasi-diterima', [PenjadwalanController::class, 'konfirmasiDiterima']);
+    Route::get('/orders/pending-verification', [TransaksiController::class, 'getOrdersPendingVerification']);
+    // Membuat transaksi/order baru
+    Route::post('/orders', [TransaksiController::class, 'store']);
 
-    Route::get('/transaksimerchandise', [TransaksiMerchandiseController::class, 'index']);
-    Route::post('/transaksimerchandise', [TransaksiMerchandiseController::class, 'store']);
-    Route::put('/transaksimerchandise/updateTanggalAmbil/{id}', [TransaksiMerchandiseController::class, 'updateTanggalAmbil']);
-    Route::delete('/transaksimerchandise/{id}', [TransaksiMerchandiseController::class, 'destroy']);
+    // Menampilkan detail transaksi spesifik
+    // {transaksi} akan menggunakan Route Model Binding ke model Transaksi Anda
+    Route::get('/orders/{id}', [TransaksiController::class, 'show']);
 
-    Route::get('/merchandise', [MerchandiseController::class, 'index']);
-    Route::post('/merchandise/klaim', [MerchandiseController::class, 'klaimMerchandise']);
+    // Mengunggah bukti pembayaran untuk transaksi spesifik
+    Route::post('/orders/{id}/payment-proof', [TransaksiController::class, 'uploadPaymentProof']);
 
-    
+    Route::post('/orders/{id}/verify-payment', [TransaksiController::class, 'verifyPayment']);
 
-});
+    Route::post('/orders/{transaksi}/approve-payment', [TransaksiController::class, 'approvePayment']);
+
+    // Rute BARU untuk menolak pembayaran
+    Route::post('/orders/{transaksi}/reject-payment', [TransaksiController::class, 'rejectPayment']);
+
+    // Route::post('/api/notifications', [NotificationController::class, 'store']);
+    Route::get('/notifications', [NotifikasiController::class, 'index']);
+    Route::post('/notifications', [NotifikasiController::class, 'store']);
+    Route::put('/notifications/{id}/read', [NotifikasiController::class, 'markAsRead']);
+    Route::get('/users/{userId}/notifications', [NotificationController::class, 'getForUser']);
+
+
+    });

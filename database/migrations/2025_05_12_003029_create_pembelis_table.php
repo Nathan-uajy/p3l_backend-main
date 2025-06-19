@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pembelis', function (Blueprint $table) {
-            $table->bigIncrements('pembeliID'); // bukan hanya increments()
-            //$table->unsignedBigInteger('alamatID');
+            $table->id('pembeliID');
+            $table->unsignedBigInteger('alamatID')->nullable();
             $table->unsignedBigInteger('ulasanID')->nullable();
             $table->string('nama');
             $table->string('email')->unique();

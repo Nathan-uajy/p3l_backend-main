@@ -9,27 +9,48 @@ class Transaksi extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'transaksiID';
     protected $table = 'transaksis';
+    protected $primaryKey = 'idTransaksi';
+    public $incrementing = true;
+    protected $keyType = 'int';
+    public $timestamps = false; // Karena Anda punya tanggalTransaksi
 
+    /**
+     * Atribut yang dapat diisi secara massal, HANYA kolom dari gambar tabel transaksis.
+     */
     protected $fillable = [
+        // 'penjadwalanID',
         'pembeliID',
-        'penitipID',
-        'tipe_transaksi',
-        'status',
-        'waktu_transaksi',
+        'penitipID',   
+        'alamatID',     // Ini ID Pembeli
         'totalHarga',
-        'poinEarned'
+        'status',
+        'tanggalTransaksi',
+        'metodePembayaran',
+        'biayaPengiriman',
+        'diskon',
+        'buktiPembayaran'
     ];
 
-    // Cast attributes to proper types
+    /**
+     * Atribut yang harus di-cast ke tipe data tertentu.
+     */
     protected $casts = [
-        'waktu_transaksi' => 'datetime',
-        'totalHarga' => 'integer',
-        'poinEarned' => 'integer',
+        'tanggalTransaksi' => 'date', // Cast ke objek Carbon (date)
+        'totalHarga'       => 'float',
+        'biayaPengiriman'  => 'float',
+        'diskon'           => 'float',
+        'penjadwalanID'    => 'integer', // Sesuaikan jika tipe datanya berbeda
+        'pegawaiID'        => 'integer', // Sesuaikan jika tipe datanya berbeda
     ];
 
-    public $timestamps = true;
+    /**
+     * Relasi ke item-item transaksi (DetailTransaksi).
+     */
+    public function items()
+    {
+        return $this->hasMany(DetailTransaksi::class, 'transaksiID', 'idTransaksi');
+    }
 
     public function detailTransaksis()
     {
@@ -38,50 +59,27 @@ class Transaksi extends Model
 
     public function penjadwalan()
     {
-        return $this->hasOne(Penjadwalan::class, 'transaksiID');
+        return $this->hasOne(Penjadwalan::class, 'transaksiID')->where('tipe', 'pengiriman');
     }
 
     public function pembeli()
     {
-        return $this->belongsTo(Pembeli::class, 'pembeliID', 'pembeliID');
+        return $this->belongsTo(Pembeli::class, 'pembeliID');
     }
 
     public function penitip()
     {
-        return $this->belongsTo(Penitip::class, 'penitipID', 'penitipID');
+        return $this->belongsTo(Penitip::class, 'penitipID');
     }
 
-    // Calculate total harga from detail transaksi
-    public function getTotalHargaAttribute()
+    public function alamat()
     {
-        // If totalHarga is already set in database, return it
-        if (isset($this->attributes['totalHarga']) && $this->attributes['totalHarga'] > 0) {
-            return $this->attributes['totalHarga'];
-        }
-        
-        // Otherwise calculate from details
-        return $this->detailTransaksis->sum(function ($detail) {
-            return $detail->getSubtotalAttribute();
-        }) ?? 0;
+        return $this->belongsTo(\App\Models\AlamatIni::class, 'alamatID', 'alamatID');
     }
 
-    // Calculate poin earned
-    public function getPoinEarnedAttribute()
+
+    public function penjadwalanPengiriman()
     {
-        // If poinEarned is already set in database, return it
-        if (isset($this->attributes['poinEarned']) && $this->attributes['poinEarned'] > 0) {
-            return $this->attributes['poinEarned'];
-        }
-        
-        // Otherwise calculate from total
-        $totalHarga = $this->getTotalHargaAttribute();
-        $basePoints = (int)($totalHarga / 10000); // 1 point per Rp10,000
-        
-        if ($totalHarga > 500000) {
-            $bonusPoints = (int)($basePoints * 0.20); // 20% bonus
-            return $basePoints + $bonusPoints;
-        }
-        
-        return $basePoints;
+        return $this->hasOne(Penjadwalan::class, 'transaksiID')->where('tipe', 'pengiriman');
     }
 }

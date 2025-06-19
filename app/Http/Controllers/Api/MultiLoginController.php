@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
+// use App\Models\User;
 use App\Models\Pegawai;
 use App\Models\Pembeli;
 use App\Models\Penitip;
@@ -19,11 +19,18 @@ class MultiLoginController extends Controller
 
         // Daftar semua model dan nama tipenya
         $tables = [
-            'user' => User::class,
+            // 'user' => User::class,
             'pegawai' => Pegawai::class,
             'pembeli' => Pembeli::class,
             'penitip' => Penitip::class,
             'organisasi' => Organisasi::class,
+        ];
+
+        $userIdFields = [
+            'pegawai' => 'pegawaiID', // Assuming 'id' is the field name for Pegawai
+            'pembeli' => 'pembeliID', // Assuming 'id' is the field name for Pembeli
+            'penitip' => 'penitipID', // Assuming 'id' is the field name for Penitip
+            'organisasi' => 'organisasiID', // Assuming 'id' is the field name for Organisasi
         ];
 
         foreach ($tables as $tipe_akun => $model) {
@@ -74,7 +81,7 @@ class MultiLoginController extends Controller
             //             'role' => $jabatan ?? $user->role ?? $tipe_akun,
             //         ],
             //         'role' => $jabatan ?? $user->role ?? $tipe_akun,
-            //         'jabatan' => $jabatan,
+            //         'jabatan' => $jabatan, 
             //         'tipe_akun' => $tipe_akun,
             //         'token_type' => 'Bearer',
             //         'access_token' => $token,
@@ -86,7 +93,7 @@ class MultiLoginController extends Controller
             return response()->json([
                 'message' => 'Login berhasil',
                 'user' => [
-                    'id' => $user->id ?? $user->organisasiID ?? $user->penitipID ?? null,
+                    'id' => $user->{$userIdFields[$tipe_akun]}, // Use dynamic field name
                     'email' => $user->email,
                     'name' => $user->name ?? $user->nama ?? $user->namaOrganisasi ?? 'Pengguna',
                     'role' => $jabatan ?? $user->role ?? $tipe_akun,
@@ -112,7 +119,7 @@ class MultiLoginController extends Controller
         $tipe = $request->input('tipe_akun'); // misal: 'pegawai', 'pembeli', dst
 
         // Validasi tipe akun
-        if (!in_array($tipe, ['user', 'pegawai', 'pembeli', 'penitip', 'organisasi'])) {
+        if (!in_array($tipe, ['pembeli', 'organisasi'])) {
             return response()->json(['message' => 'Tipe akun tidak valid'], 400);
         }
 
