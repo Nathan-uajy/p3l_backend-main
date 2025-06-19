@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->string('role'); // contoh: admin, owner, pegawai_gudang
-            $table->string('jabatan');
+            $table->string('jabatan'); 
+            $table->date('tanggalLahir');
             $table->timestamps();
         });
     }

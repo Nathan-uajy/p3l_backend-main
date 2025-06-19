@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Barang extends Model
 {
     protected $table = 'barangs';
-    protected $primaryKey = 'idProduk';
+    protected $primaryKey = 'idProduk'; // karena bukan "id"
 
     protected $fillable = [
         'donasiID',
@@ -17,37 +17,28 @@ class Barang extends Model
         'gambar2',
         'deskripsi',
         'harga',
-        'kategoriID', 
+        'kategori',
         'status',
         'tglMulai',
         'tglSelesai',
         'garansi',
-        'kurirID',
-        'created_at',
-        'updated_at',
     ];
 
-    protected $casts = [
-        'harga' => 'decimal:2',
-        'tglMulai' => 'date',
-        'tglSelesai' => 'date',
-        'garansi' => 'date',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+    protected $dates = [
+        'tglMulai',
+        'tglSelesai',
+        'garansi',
     ];
-
     public function penitip()
     {
         return $this->belongsTo(Penitip::class, 'penitipID', 'penitipID');
     }
 
-    public function kategori()
-    {
-        return $this->belongsTo(Kategori::class, 'kategoriID', 'idKategori');
-    }
+    public function produk()
+{
+    return $this->hasOne(Produk::class, 'barangID', 'barangID');
+}
 
-    public function kurir()
-    {
-        return $this->belongsTo(Pegawai::class, 'kurirID', 'pegawaiID');
-    }
+
+    
 }
